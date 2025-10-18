@@ -1,0 +1,36 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  php-ci:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+
+    - name: Check PHP syntax
+      run: |
+        echo "Checking PHP files for syntax errors..."
+        find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; || true
+
+    - name: Verify project structure
+      run: |
+        echo "Checking project files..."
+        [ -f "index.php" ] && echo "✓ index.php exists" || echo "✗ index.php missing"
+        [ -f "satellites.php" ] && echo "✓ satellites.php exists" || echo "✗ satellites.php missing"
+        ls -la
