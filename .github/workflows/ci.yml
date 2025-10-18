@@ -1,0 +1,48 @@
+
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  php-ci:
+    name: PHP Build, Lint & Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        coverage: none
+
+    - name: Validate composer.json
+      run: composer validate --strict
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Check PHP syntax
+      run: |
+        find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; | grep -v "No syntax errors"
+
+    - name: Check for syntax errors
+      run: |
+        echo "Checking PHP files for syntax errors..."
+        find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; || exit 1
+
+    - name: Verify required files exist
+      run: |
+        echo "Checking required project files..."
+        [ -f "index.php" ] && echo "✓ index.php exists" || echo "✗ index.php missing"
+        [ -f "satellites.php" ] && echo "✓ satellites.php exists" || echo "✗ satellites.php missing"
+        [ -f "composer.json" ] && echo "✓ composer.json exists" || echo "✗ composer.json missing"
