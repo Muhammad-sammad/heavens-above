@@ -1,9 +1,10 @@
-
 name: Deploy to Heroku
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/deployment-setup ]
+  pull_request:
+    branches: [ main, feature/deployment-setup ]
   workflow_dispatch:
 
 jobs:
@@ -29,5 +30,5 @@ jobs:
       uses: akhileshns/heroku-deploy@v3.12.12
       with:
         heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-        heroku_app_name: "your-heavens-above-app"
+        heroku_app_name: "heavens-above-$(date +%s)"
         heroku_email: "your-email@example.com"
