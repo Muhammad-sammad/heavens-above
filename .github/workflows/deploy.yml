@@ -38,6 +38,6 @@ jobs:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       run: |
         heroku auth:token
-        heroku create heavens-above-${{ github.run_number }} || true
-        git remote add heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/heavens-above-${{ github.run_number }}.git
-        git push heroku main
+        # Use existing app or create via API
+        heroku apps:info heavens-above-demo || heroku create heavens-above-demo --json
+        git push https://heroku:$HEROKU_API_KEY@git.heroku.com/heavens-above-demo.git HEAD:main
