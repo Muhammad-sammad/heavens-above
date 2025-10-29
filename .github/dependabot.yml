@@ -1,0 +1,36 @@
+
+version: 2
+updates:
+  # Monitor PHP dependencies (Composer)
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    versioning-strategy: "increase"
+    labels:
+      - "dependencies"
+      - "php"
+    commit-message:
+      prefix: "composer"
+      include: "scope"
+    reviewers:
+      - "Muhammad-sammad"
+    assignees:
+      - "Muhammad-sammad"
+
+  # Monitor GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "github-actions"
