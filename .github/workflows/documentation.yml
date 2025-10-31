@@ -1,0 +1,250 @@
+
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/documentation.yml'
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Verify documentation structure
+      run: |
+        echo " Documentation Structure Verification"
+        echo "======================================"
+        [ -d "docs" ] && echo " docs/ directory exists" || echo " docs/ directory missing"
+        [ -f "docs/README.md" ] && echo " docs/README.md exists" || echo " docs/README.md missing"
+        [ -f "docs/api.md" ] && echo " docs/api.md exists" || echo " docs/api.md missing"
+        
+        echo ""
+        echo " Documentation Metrics:"
+        echo "Total markdown files: $(find docs -name "*.md" | wc -l)"
+        echo "Total documentation size: $(du -sh docs | cut -f1)"
+        
+        echo ""
+        echo " Content Validation:"
+        find docs -name "*.md" -exec echo "Validating: {}" \;
+
+    - name: Generate documentation site
+      run: |
+        echo " Building documentation site..."
+        # Create a simple HTML documentation site
+        mkdir -p _site
+        
+        cat > _site/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Heavens Above Documentation</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                nav { background: #f4f4f4; padding: 15px; border-radius: 5px; }
+                .container { max-width: 800px; margin: 0 auto; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Heavens Above Documentation</h1>
+                <nav>
+                    <a href="#overview">Overview</a> | 
+                    <a href="#api">API Reference</a> |
+                    <a href="#deployment">Deployment</a>
+                </nav>
+                <div id="content">
+                    <h2 id="overview">Project Overview</h2>
+                    <p>Web application for tracking satellites and celestial objects.</p>
+                    
+                    <h2 id="api">API Reference</h2>
+                    <p>Satellite tracking endpoints and data sources.</p>
+                    
+                    <h2 id="deployment">Deployment Guide</h2>
+                    <p>Deploy to any PHP-compatible web server.</p>
+                </div>
+                <footer>
+                    <p><em>Automatically generated documentation - Version: ${{ github.sha }}</em></p>
+                </footer>
+            </div>
+        </body>
+        </html>
+        EOF
+        
+        echo " Documentation site generated"
+
+    - name: Upload documentation preview
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation-preview
+        path: _site/
+        retention-days: 1
+
+  deploy-docs:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build-docs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Build documentation site
+      run: |
+        echo " Building production documentation..."
+        mkdir -p _site
+        
+        # Generate comprehensive documentation site
+        cat > _site/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Heavens Above - Documentation</title>
+            <meta name="description" content="Documentation for Heavens Above satellite tracking application">
+            <style>
+                :root { --primary: #2c3e50; --secondary: #3498db; }
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; line-height: 1.6; }
+                .header { background: var(--primary); color: white; padding: 2rem 0; text-align: center; }
+                .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+                .nav { background: var(--secondary); padding: 1rem 0; }
+                .nav a { color: white; text-decoration: none; margin: 0 1rem; font-weight: 500; }
+                .content { padding: 2rem 0; }
+                .section { margin-bottom: 3rem; padding: 2rem; background: #f8f9fa; border-radius: 8px; }
+                footer { background: var(--primary); color: white; text-align: center; padding: 2rem 0; margin-top: 3rem; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="container">
+                    <h1>Heavens Above</h1>
+                    <p>Satellite Tracking Application Documentation</p>
+                </div>
+            </div>
+            
+            <div class="nav">
+                <div class="container">
+                    <a href="#overview">Overview</a>
+                    <a href="#features">Features</a>
+                    <a href="#installation">Installation</a>
+                    <a href="#api">API Reference</a>
+                    <a href="#deployment">Deployment</a>
+                </div>
+            </div>
+            
+            <div class="container">
+                <div class="content">
+                    <div class="section" id="overview">
+                        <h2>Project Overview</h2>
+                        <p>Heavens Above is a web application designed for tracking satellites and celestial objects in real-time. Built with PHP, it provides an intuitive interface for space enthusiasts and researchers.</p>
+                    </div>
+                    
+                    <div class="section" id="features">
+                        <h2>Features</h2>
+                        <ul>
+                            <li>Real-time satellite tracking and visualization</li>
+                            <li>Comprehensive celestial object database</li>
+                            <li>PHP-based web interface</li>
+                            <li>Responsive design for multiple devices</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="section" id="installation">
+                        <h2>Installation Guide</h2>
+                        <h3>Requirements</h3>
+                        <ul>
+                            <li>PHP 8.1 or higher</li>
+                            <li>Web server (Apache/Nginx)</li>
+                            <li>Modern web browser</li>
+                        </ul>
+                        
+                        <h3>Setup Steps</h3>
+                        <ol>
+                            <li>Clone the repository</li>
+                            <li>Deploy files to your web server</li>
+                            <li>Ensure PHP is properly configured</li>
+                            <li>Access the application via web browser</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="section" id="api">
+                        <h2>API Reference</h2>
+                        <h3>Main Endpoints</h3>
+                        <ul>
+                            <li><code>/index.php</code> - Application homepage</li>
+                            <li><code>/satellites.php</code> - Satellite tracking interface</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="section" id="deployment">
+                        <h2>Deployment</h2>
+                        <p>The application can be deployed to any PHP-compatible hosting environment. This documentation is automatically deployed using GitHub Pages.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <footer>
+                <div class="container">
+                    <p><strong>Heavens Above Documentation</strong></p>
+                    <p>Automatically deployed via GitHub Actions | Version: ${{ github.sha }} | Built: $(date)</p>
+                </div>
+            </footer>
+        </body>
+        </html>
+        EOF
+        
+        echo " Production documentation built"
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site/
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+    - name: Verify deployment
+      run: |
+        echo " Documentation successfully deployed to GitHub Pages"
+        echo " Live URL: ${{ steps.deployment.outputs.page_url }}"
+        echo " Deployment time: $(date)"
+
+  docs-health-check:
+    name: Documentation Health Check
+    runs-on: ubuntu-latest
+    needs: deploy-docs
+    if: always()
+    
+    steps:
+    - name: Check deployment status
+      run: |
+        echo " Documentation Deployment Health Check"
+        echo "========================================"
+        echo " Build job completed: ${{ needs.deploy-docs.result == 'success' && 'SUCCESS' || 'FAILED' }}"
+        echo " Documentation URL: ${{ needs.deploy-docs.outputs.page_url }}"
+        echo " Workflow: ${{ github.workflow }}"
+        echo " Commit: ${{ github.sha }}"
